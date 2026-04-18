@@ -13,4 +13,4 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Use Streamlit's command instead of just "python app.py"
-CMD ["streamlit", "run", "app.py", "--server.port=8501"]
+CMD ["streamlit", "run", "recognisation.py", "--server.port=8501"]
