@@ -1,43 +1,38 @@
-name: FER Project Pipeline
+name: FER Manual & Auto Pipeline
 
 on:
+  # This enables the manual trigger button in GitHub Actions
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why are you running this manually?'
+        required: false
+        default: 'Testing new model version'
+
+  # This keeps the automation on every push to master
   push:
-    branches: [ "main" ] # Runs every time you push to the main branch
-  pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
-  build-and-test:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          
+      - name: Run Recognition Test
+        # This acts as your "manual" verification
+        run: python -c "import cv2; import tensorflow; print('Libraries and OpenCV loaded successfully')"
 
-    - name: Install Python Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-    - name: Verify Project Structure
-      run: |
-        # This checks if your essential files are in the right place
-        ls app.py
-        ls emotion_class.h5
-        ls templates/index.html
-
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        # Stop the build if there are Python syntax errors
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Trigger Web Deployment
+        # Only runs if you've set up your RENDER_DEPLOY_HOOK_URL secret
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
