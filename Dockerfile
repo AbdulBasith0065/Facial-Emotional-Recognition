@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Install only the bare minimum system libraries for OpenCV
 RUN yum install -y \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
