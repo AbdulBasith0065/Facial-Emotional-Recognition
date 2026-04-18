@@ -32,7 +32,13 @@ jobs:
       - name: Run Recognition Test
         # This acts as your "manual" verification
         run: python -c "import cv2; import tensorflow; print('Libraries and OpenCV loaded successfully')"
-
       - name: Trigger Web Deployment
-        # Only runs if you've set up your RENDER_DEPLOY_HOOK_URL secret
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+      run: |
+        if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+        else
+          echo "Error: RENDER_DEPLOY_HOOK_URL is not set in GitHub Secrets"
+          exit 1
+        fi
+
+     
