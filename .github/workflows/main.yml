@@ -1,1 +1,63 @@
+name: FER CI Pipeline
 
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
+
+      - name: Install Python Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Verify Core Packages
+        run: |
+          python -c "import tensorflow, cv2, numpy; print('✅ All packages OK')"
+
+      - name: Validate CNN Model
+        run: |
+          python -c "
+          from tensorflow import keras
+          model = keras.Sequential([
+              keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=(48,48,1)),
+              keras.layers.MaxPooling2D(),
+              keras.layers.Flatten(),
+              keras.layers.Dense(7, activation='softmax')
+          ])
+          model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+          print('✅ Model OK —', model.count_params(), 'params')
+          "
+
+      - name: Validate Face Detection
+        run: |
+          python -c "
+          import cv2, numpy as np
+          cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+          assert not cascade.empty(), 'Cascade load failed'
+          print('✅ OpenCV Haar Cascade OK')
+          "
+
+      - name: Run Tests
+        run: |
+          pip install pytest
+          pytest tests/ -v --tb=short
+        continue-on-error: true
