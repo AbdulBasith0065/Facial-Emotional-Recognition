@@ -34,4 +34,4 @@ jobs:
       - name: Run recognization.py
         run: |
           source venv/bin/activate
-          python recognization.py
+          python -m streamlit run recognization.py
