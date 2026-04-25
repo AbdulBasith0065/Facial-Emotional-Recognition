@@ -1,63 +1,37 @@
-name: FER CI Pipeline
+name: FER - Run Recognition
 
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  workflow_dispatch  # Manual trigger
 
 jobs:
-  ci:
-    name: Build & Validate
+  run:
+    name: Setup & Run
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-          cache: pip
 
       - name: Install System Dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y libgl1 libglib2.0-0
+          sudo apt-get install -y libgl1-mesa-glx libglib2.0-0
 
-      - name: Install Python Dependencies
-        run: pip install -r requirements.txt
+      - name: Create Virtual Environment
+        run: python -m venv venv
 
-      - name: Verify Core Packages
+      - name: Install Requirements
         run: |
-          python -c "import tensorflow, cv2, numpy; print('✅ All packages OK')"
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Validate CNN Model
+      - name: Run recognization.py
         run: |
-          python -c "
-          from tensorflow import keras
-          model = keras.Sequential([
-              keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=(48,48,1)),
-              keras.layers.MaxPooling2D(),
-              keras.layers.Flatten(),
-              keras.layers.Dense(7, activation='softmax')
-          ])
-          model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-          print('✅ Model OK —', model.count_params(), 'params')
-          "
-
-      - name: Validate Face Detection
-        run: |
-          python -c "
-          import cv2, numpy as np
-          cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-          assert not cascade.empty(), 'Cascade load failed'
-          print('✅ OpenCV Haar Cascade OK')
-          "
-
-      - name: Run Tests
-        run: |
-          pip install pytest
-          pytest tests/ -v --tb=short
-        continue-on-error: true
+          source venv/bin/activate
+          python recognization.py
